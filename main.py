@@ -21,6 +21,7 @@ from discord.ext import commands
 from discord.ext.commands import MissingPermissions
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
+# from dotenv.main import with_warn_for_invalid_lines
 import requests
 from discord.utils import get
 from discord.ext import commands
@@ -32,7 +33,8 @@ import wikipedia
 from weather import Weather
 from deep_translator import GoogleTranslator
 from gtts import gTTS
-
+import yt_dlp
+from discord.ui import View, Button
 
 #
 load_dotenv()
@@ -51,7 +53,7 @@ class aclient(discord.Client):
         print(f"{client.user.name} đã kết nối tới Discord")
         client.togetherControl = await DiscordTogether(TOKEN)
 
-        activity = discord.Game(name='/help để nhận hỗ trợ', type=3)
+        activity = discord.Game(name='/ai-chat để đặt câu hỏi với AI', type=3)
         await client.change_presence(status=discord.Status.online, activity=activity)
 
 
@@ -68,12 +70,15 @@ async def self(interaction: discord.Interaction):
     myembed = discord.Embed (title = 'Peanutss Bot (v4.2.0)', description = 'Sử dụng `/[lệnh]` để tương tác với bot', color = discord.Color.gold())
     myembed.set_author (name = "Danh Sách Lệnh")
     myembed.add_field (name = "💬 Tương Tác - (5)", value = "</số-may-mắn:1014044426898784275>, </máy-tính-bỏ-túi:1137034655112106046>, </máy-tính-tuổi-thông-minh:1013757293248122971>, </văn-mẫu:1014047478808576021>, </hành-động:1014047478808576020>", inline=False)
+    myembed.add_field (name = "🤖 Trí Tuệ Nhân Tạo (AI) - (2)", value = "`/ai-chat` `/imagine`", inline=False)
+    myembed.add_field (name = "🎵 Âm Nhạc - (7)", value = "`/play`, `/skip` ,`/pause`, `/resume`, `/queue`, `/join`, `/leave`", inline=False)
+    myembed.add_field (name = "🎮 Mini Game - (2)", value = "`/xì-dách`, `/kéo-búa-bao`", inline=False)
     myembed.add_field (name = "🎁 Media - (7)", value = "</meme:1014044426898784273>, </darkmeme:1014044426898784274>, </girl:1014044427255287884>, </cat:1014044427255287878>, </dog:1014044427255287879>, </food:1014044427255287880>, </waifu:1014044427255287882>", inline=False)
     myembed.add_field (name = "📺 Giải Trí - (6)", value = "</youtube:1014044427255287885>, </cờ-vua:1025980386439856229>, </uno:1139271595504963595>, </gartic-phone:1139271595504963594>, </putt-party:1139271595504963596>, </poker-night:1025980386439856230>", inline=False)
     myembed.add_field (name = "🔞 NSFW - (1)", value = "</hentai:1014044427255287883>", inline=False)
     myembed.add_field (name = "🪙 Tiền Tệ - (1)", value = "</binance:1014044427372744773>", inline=False)
-    myembed.add_field (name = "⚠️Quản Lí - (4)", value = "`/kick` `/ban` `/unban` `/timeout`: Coming Soon!", inline=False)
-    myembed.add_field (name = "💡 Tính Năng Bổ Trợ - (9)", value = "</ai-chat:1136404460306956440>, </tìm-tên-bài-hát:1136561727945842729>, </rút-gọn-link:1136680617967362118>, </tạo-qr-code:1136665819800150026>, </dịch:1014044427255287887>, </lyrics:1136404460306956439>, </sắp-tết:1014044427255287886>, </thời-tiết:1025427457559502868>, </chat-with-another-language:1027239217073487923>", inline=False)
+    myembed.add_field (name = "⚠️ Quản Lí Server- (4)", value = "`/kick` `/ban` `/unban` `/clear`", inline=False)
+    myembed.add_field (name = "💡 Tính Năng Bổ Trợ - (9)", value = "`/speak` </tìm-tên-bài-hát:1136561727945842729>, </rút-gọn-link:1136680617967362118>, </tạo-qr-code:1136665819800150026>, </dịch:1014044427255287887>, </lyrics:1136404460306956439>, </sắp-tết:1014044427255287886>, </thời-tiết:1025427457559502868>, </chat-with-another-language:1027239217073487923>", inline=False)
     myembed.add_field (name = "⚙️ Guilds - (6)", value = "</tính-năng-mới:1136902132457541703>, </help:1014044426898784271>, </ping:1014044427372744766>, </server-status:1014044427372744771>, </server-avatar:1014044427372744772>, </avatar:1025964029438607421>", inline=False)
     myembed.add_field (name = "☎️ Contact - (3):", value = "</contact:1014044427372744765>, </donate:1014044427372744767>, </invite:1014044427372744770>", inline=False)
     myembed.set_footer(text="• Big Update: Thêm Lệnh 'AI-Chat' giúp tra cứu thông tin một cách chính xác hơn!")
@@ -559,43 +564,9 @@ async def wiki_autocomplete(
         for wiki1 in ngon_ngu if current.lower() in wiki1.lower()
         ]
 
-#####
-@tree.command(name = 'timeout', description = "Timeout/mute member bất kì")
-@commands.has_permissions(moderate_members = True)
-async def timeout(interaction: discord.Interaction, member: discord.Member, days: int, hours: int, minutes: int, seconds: int):
-    try:
-        if days == None:
-            days = 0
-        if hours == None:
-            hours = 0
-        if minutes == None:
-            minutes = 0
-        if seconds == None:
-            minutes = 0
-        duration = timedelta(days = days, hours = hours, minutes = minutes, seconds = seconds)
-        if member.id == interaction.user.id:
-            await interaction.response.send_message("Bạn không thể tự timeout bản thân!")
-        else: 
-            await member.timeout(timedelta(days = days, hours = hours, minutes = minutes, seconds = seconds))
-            await interaction.response.send_message(f"**{member}** đã bị timeout {days} ngày, {hours} giờ, {minutes} phút, {seconds} giây")
-    except:
-        await interaction.response.send_message(f"Không thể timeout **{member}** vì một trong các lí do như sau: \nBot không có quyền timeout \nBạn đang cố gắng timeout một người có role cao hơn mình \nBạn không có quyền timeout")
+
 
 #####
-@tree.command(name = 'kick', description = "Kicke member bất kì")
-@commands.has_permissions(moderate_members = True)
-async def kick(interaction: discord.Interaction, member: discord.Member):
-    try:
-        if member.id == interaction.user.id:
-            await interaction.response.send_message("Bạn không thể tự timeout bản thân!")
-        else: 
-            await member.kick()
-            await interaction.response.send_message(f"**{member}** đã bị kick")
-    except:
-        await interaction.response.send_message(f"Không thể kick **{member}** vì một trong các lí do như sau: \nBot không có quyền kick \nBạn đang cố gắng kick một người có role cao hơn mình \nBạn không có quyền kick")
-
-
-
 
 @tree.command(name = 'thời-tiết', description = 'Xem tình hình thời tiết ở bất kì thành phố nào trên thế giới')
 async def weather(interaction: discord.Interaction, city_name: str):
@@ -683,9 +654,7 @@ async def cwal(interaction: discord.Interaction, language : str, text : str):
 
     trans_text = GoogleTranslator(source='auto', target=f'{lang_code}').translate(text=text)
 
-    username = interaction.user.nick
-    if username == None:
-        username = interaction.user.name #ưu tiên hiển thị nickname trong server, nếu ko có nick name thì hiện tên
+    username = interaction.user.nick or interaction.user.name #ưu tiên hiển thị nickname trong server, nếu ko có nick name thì hiện tên
 
     cwalEmbed = discord.Embed(color = discord.Color.random())
     cwalEmbed.set_author(name = f'{username}:', icon_url = f'{interaction.user.avatar}')
@@ -708,112 +677,10 @@ async def cwal_autocomplete(
 
 ####
 
-nest_asyncio.apply()
-@tree.command(name="kéo-búa-bao", description = "Chơi trò chơi Kéo Búa Bao")
-async def keobuabao(interaction: discord.Interaction):
-    
-    
-    async def keo_bua_bao(interaction, playerchoice):
-        playerchoice = None
-        computerchoice = random.choice(["Kéo", "Búa", "Bao"])
-        
-        if computerchoice == playerchoice:
-            await interaction.response.send_message("<a:ggload:1063834419510661200>")
-            await interaction.edit_original_response(content=None, embed=tieEmbed, view = KBBButton())
-
-        elif computerchoice == "Kéo" and playerchoice == "Búa":
-            await interaction.response.send_message("<a:ggload:1063834419510661200>")
-            await interaction.edit_original_response(content=None, embed=winEmbed, view = KBBButton())
-        elif computerchoice == "Búa" and playerchoice == "Bao":
-            await interaction.response.send_message("<a:ggload:1063834419510661200>")
-            await interaction.edit_original_response(content=None, embed=winEmbed, view = KBBButton())
-        elif computerchoice == "Bao" and playerchoice == "Kéo":
-            await interaction.response.send_message("<a:ggload:1063834419510661200>")
-            await interaction.edit_original_response(content=None, embed=winEmbed, view = KBBButton())
-
-        elif computerchoice == "Kéo" and playerchoice == "Bao":
-            await interaction.response.send_message("<a:ggload:1063834419510661200>")
-            await interaction.edit_original_response(content=None, embed=loseEmbed, view = KBBButton())
-        elif computerchoice == "Búa" and playerchoice == "Kéo":
-            await interaction.response.send_message("<a:ggload:1063834419510661200>")
-            await interaction.edit_original_response(content=None, embed=loseEmbed, view = KBBButton())
-        elif computerchoice == "Bao" and playerchoice == "Búa":
-            await interaction.response.send_message("<a:ggload:1063834419510661200>")
-            await interaction.edit_original_response(content=None, embed=loseEmbed, view = KBBButton())
-        else:
-            print("Lỗi")
-
-        return playerchoice, computerchoice
-    playerchoice = await keo_bua_bao()
-    computerchoice = await keo_bua_bao()
-    print(playerchoice, computerchoice)
-       # print("Người: ", playerchoice, " - " "Máy: ", computerchoice)
-        
-
-    class KBBButton(discord.ui.View):
-        def __init__(self):
-            super().__init__(timeout=None)
-
-        @discord.ui.button(label='Kéo ✌️', style=discord.ButtonStyle.green)
-        async def keo(self, interaction: discord.Integration, button: discord.ui.Button):
-            playerchoice = "Kéo"
-            computerchoice = random.choice(["Kéo", "Búa", "Bao"])
-            if computerchoice == playerchoice:
-                await interaction.response.edit_message(embed = tieEmbed, view = KBBButton())
-            elif computerchoice == "Búa":
-                await interaction.response.edit_message(embed = loseEmbed, view = KBBButton())
-            elif computerchoice == "Bao":
-                await interaction.response.edit_message(embed = winEmbed, view = KBBButton())
-
-    
-        @discord.ui.button(label='Búa 👊', style=discord.ButtonStyle.blurple)
-        async def bua(self, interaction: discord.Integration, button: discord.ui.Button):
-            playerchoice = "Búa"
-            computerchoice = random.choice(["Kéo", "Búa", "Bao"])
-            if computerchoice == playerchoice:
-                await interaction.response.edit_message(embed = tieEmbed, view = KBBButton())
-            elif computerchoice == "Kéo":
-                await interaction.response.edit_message(embed = winEmbed, view = KBBButton())
-            elif computerchoice == "Bao":
-                await interaction.response.edit_message(embed = loseEmbed, view = KBBButton())
-
-
-        @discord.ui.button(label='Bao ✋', style=discord.ButtonStyle.gray)
-        async def bao(self, interaction: discord.Integration, button: discord.ui.Button):
-            playerchoice = "Bao"
-            computerchoice = random.choice(["Kéo", "Búa", "Bao"])
-            if computerchoice == playerchoice:
-                await interaction.response.edit_message(embed = tieEmbed, view = KBBButton())
-            elif computerchoice == "Búa":
-                await interaction.response.edit_message(embed = winEmbed, view = KBBButton())
-            elif computerchoice == "Kéo":
-                await interaction.response.edit_message(embed = loseEmbed, view = KBBButton())
-
-
-        @discord.ui.button(label='Thoát ❌', style=discord.ButtonStyle.red)
-        async def thoat(self, interaction: discord.Integration, button: discord.ui.Button):
-            await interaction.delete_original_response()
-        
-        
-
-    gameEmbed = discord.Embed(title = 'Chào Mừng Bạn Đến Với Trò Chơi Kéo Búa Bao', description = 'Vui lòng lựa chọn bằng cách bấm các nút bên dưới!', color = discord.Color.gold())
-    gameEmbed.set_footer(text = f'')
-        
-    loseEmbed = discord.Embed(title = 'Kết Quả: THUA', description = f'Máy chọn: {computerchoice}\n Bạn chọn: {playerchoice}', color = discord.Color.red())
-    loseEmbed.set_footer(text = f'{interaction.user} đã THUA cuộc!')
-
-    winEmbed = discord.Embed(title = 'Kết Quả: THẮNG', description = f'Máy chọn: {computerchoice}\n Bạn chọn: {playerchoice}', color = discord.Color.green())
-    winEmbed.set_footer(text = f'{interaction.user} đã THẮNG cuộc!')
-
-    tieEmbed = discord.Embed(title = 'Kết Quả: HÒA', description = f'Máy chọn: {computerchoice}\n Bạn chọn: {playerchoice}', color = discord.Color.blue())
-    tieEmbed.set_footer(text = f'{interaction.user} đã cầm HÒA với bot!!')
-
-    await interaction.response.send_message(embed = gameEmbed, view = KBBButton()) 
 
 
 
-
-####
+#### test 
 @tree.command(name="traloi", description = "Sử dụng Rep")
 async def self(interaction: discord.Interaction, ch: str):
 
@@ -840,95 +707,375 @@ async def self(interaction: discord.Interaction, ch: str):
 
 ###########
 @tree.command(name="join", description = "Gọi bot vào phòng voice")
-async def self(interaction: discord.Interaction):
-    await interaction.user.voice.channel.connect()
-    await interaction.response.send_message("Đã kết nối!")
+async def join(interaction: discord.Interaction):
+    if interaction.user.voice is None:
+        await interaction.response.send_message("❌ Bạn phải ở trong một kênh voice để sử dụng lệnh này!", ephemeral=True)
+        return
+
+    voice_channel = interaction.user.voice.channel
+    voice_client = discord.utils.get(interaction.client.voice_clients, guild=interaction.guild)
+
+    if voice_client and voice_client.is_connected():
+        await interaction.response.send_message(f"✅ Bot đã có mặt trong {voice_client.channel.mention}!", ephemeral=True)
+    else:
+        await voice_channel.connect()
+        await interaction.response.send_message(f"✅ Đã tham gia **{voice_channel.mention}**!", ephemeral=False)
 
 
-@tree.command(name="speak", description = "Dùng để nói trong voicechat khi bạn không có mic")
+
+
+#########
+@tree.command(name="leave", description="Yêu cầu bot rời khỏi voice chat")
+async def leave(interaction: discord.Interaction):
+    voice_client = discord.utils.get(interaction.client.voice_clients, guild=interaction.guild)
+
+    if voice_client is not None:  # Kiểm tra xem bot có đang ở trong voice channel không
+        await voice_client.disconnect()
+        await interaction.response.send_message("👋 Bot đã rời khỏi voice chat!")
+    else:
+        await interaction.response.send_message("❌ Bot không ở trong voice chat nào cả!")
+
+
+
+
+##
+@tree.command(name="speak", description="Dùng để nói trong voicechat khi bạn không có mic")
 async def self(interaction: discord.Interaction, van_ban: str):
-    #
+    username = interaction.user.nick or interaction.user.name  # Lấy nickname, nếu không có thì lấy username
+
+    # Tạo file âm thanh
     sound = gTTS(text=van_ban, lang='vi', slow=False)
-    sound.save("tts.mp3")   
-    if interaction.user.voice != None:
-        try:
-            voicechat = await interaction.user.voice.channel.connect()
-        except:
-            # voicechat = discord.voice_client.VoiceClient
+    sound.save("tts.mp3")
 
-            # if voicechat.is_playing():
-            #     voicechat.stop()
+    if interaction.user.voice is not None:  # Kiểm tra user có đang ở voice channel không
+        voice_channel = interaction.user.voice.channel
+        voice_client = discord.utils.get(interaction.client.voice_clients, guild=interaction.guild)
 
-            source = await discord.FFmpegOpusAudio.from_probe("tts.mp3", method='fallback', executable="D:\Data\Data\Peanutss Bot Project\peabot-new-features-test\ffmpeg\bin\ffmpeg.exe")
-            await interaction.response.send_message(f"**{interaction.user} muốn nói rằng:** {van_ban}")
-            voicechat.play(source)
+        if voice_client is None:  # Nếu bot chưa vào phòng, kết nối vào
+            voice_client = await voice_channel.connect()
+        elif voice_client.channel != voice_channel:  # Nếu bot đang ở kênh khác, di chuyển sang
+            await voice_client.move_to(voice_channel)
 
-    else: 
-        source = await discord.FFmpegOpusAudio.from_probe("tts.mp3", method='fallback', executable="D:\Data\Data\Peanutss Bot Project\peabot-new-features-test\ffmpeg\bin\ffmpeg.exe")
-        await interaction.response.send_message(f"**{interaction.user} muốn nói rằng:** {van_ban}")
-        voicechat.play(source)
+        source = await discord.FFmpegOpusAudio.from_probe(
+            "tts.mp3", method='fallback', executable="D:/Data/Data/Peanutss Bot Project/peabot-new-features-test/ffmpeg/bin/ffmpeg.exe"
+        )
 
-    # else:
-    #      await interaction.response.send_message("Bạn phải vào kênh voice chat mới sử dụng được chức năng này, hãy sử dụng /join")
+        await interaction.response.send_message(f"**{username} muốn nói rằng:** {van_ban}")
         
+        if not voice_client.is_playing():  # Kiểm tra nếu bot chưa phát âm thanh thì phát
+            voice_client.play(source)
+        else:
+            await interaction.followup.send("Bot đang phát âm thanh, vui lòng chờ.")
+
+
+################## khối lệnh âm nhạc ######################
+
+ # Dictionary để lưu danh sách bài hát theo guild ID
+queue = {} 
+
+@tree.command(name="play", description="Phát nhạc từ YouTube bằng từ khóa hoặc link")
+async def play(interaction: discord.Interaction, query: str):
+    await interaction.response.defer()  # Tránh timeout khi tìm kiếm YouTube
+
+    guild_id = interaction.guild.id
+    voice_channel = interaction.user.voice.channel if interaction.user.voice else None
     
-@tree.command(name="stop", description = "Dừng nhạc")
-async def self(interaction: discord.Interaction):
-    await interaction.user.voice.channel.disconnect()
-    await interaction.response.send_message("Đã dừng nhạc!")
+    if not voice_channel:
+        await interaction.followup.send("❌ Bạn phải tham gia voice channel trước!")
+        return
+    
+    voice_client = discord.utils.get(interaction.client.voice_clients, guild=interaction.guild)
+
+    if not voice_client:
+        voice_client = await voice_channel.connect()
+    elif voice_client.channel != voice_channel:
+        await voice_client.move_to(voice_channel)
+
+    # Xác định query là link hay từ khóa
+    ydl_opts = {"format": "bestaudio", "noplaylist": True}
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        try:
+            if "youtube.com" in query or "youtu.be" in query:
+                info = ydl.extract_info(query, download=False)  # Nếu là link, tải thông tin trực tiếp
+            else:
+                info = ydl.extract_info(f"ytsearch:{query}", download=False)["entries"][0]  # Nếu là từ khóa, tìm kiếm video
+            url = info["url"]
+            title = info["title"]
+        except Exception as e:
+            await interaction.followup.send(f"❌ Không tìm thấy video nào cho: {query}")
+            return
+    
+    # Thêm bài hát vào hàng đợi
+    if guild_id not in queue:
+        queue[guild_id] = []
+    queue[guild_id].append((url, title))
+
+    await interaction.followup.send(f"🎵 **Đã thêm vào hàng đợi:** {title}")
+
+    # Nếu bot chưa phát nhạc, bắt đầu phát
+    if not voice_client.is_playing():
+        await play_next_song(voice_client, guild_id, interaction)
+
+async def play_next_song(voice_client, guild_id, interaction):
+    if guild_id in queue and queue[guild_id]:
+        url, title = queue[guild_id].pop(0)
+
+        ffmpeg_options = {
+            "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
+            "options": "-vn",
+            "executable": "D:/Data/Data/Peanutss Bot Project/peabot-new-features-test/ffmpeg/bin/ffmpeg.exe"
+        }
+        
+        source = discord.FFmpegOpusAudio(url, **ffmpeg_options)
+
+        def after_play(error):
+            if error:
+                print(f"Lỗi phát nhạc: {error}")
+            asyncio.run_coroutine_threadsafe(play_next_song(voice_client, guild_id, interaction), interaction.client.loop)
+
+        voice_client.play(source, after=after_play)
+
+        await interaction.followup.send(f"🎶 **Đang phát:** {title}")
+    else:
+        await interaction.followup.send("✅ Hàng đợi đã phát hết, bot sẽ rời voice chat.")
+        await voice_client.disconnect()
+
+@tree.command(name="skip", description="Bỏ qua bài hát đang phát hiện tại")
+async def skip(interaction: discord.Interaction):
+    voice_client = discord.utils.get(interaction.client.voice_clients, guild=interaction.guild)
+
+    if voice_client and voice_client.is_playing():
+        voice_client.stop()  # Dừng bài hiện tại, sẽ tự phát bài tiếp theo
+        await interaction.response.send_message("⏭ **Đã bỏ qua bài hát!**")
+    else:
+        await interaction.response.send_message("❌ Không có bài nào đang phát.")
+
+@tree.command(name="pause", description="Tạm dừng bài hát đang phát/")
+async def pause(interaction: discord.Interaction):
+    voice_client = discord.utils.get(interaction.client.voice_clients, guild=interaction.guild)
+
+    if voice_client and voice_client.is_playing():
+        voice_client.pause()
+        await interaction.response.send_message("⏸ **Đã tạm dừng nhạc!**")
+    else:
+        await interaction.response.send_message("❌ Không có bài nào đang phát.")
+
+@tree.command(name="resume", description="Tiếp tục phát nhạc")
+async def resume(interaction: discord.Interaction):
+    voice_client = discord.utils.get(interaction.client.voice_clients, guild=interaction.guild)
+
+    if voice_client and voice_client.is_paused():
+        voice_client.resume()
+        await interaction.response.send_message("▶️ **Tiếp tục phát nhạc!**")
+    else:
+        await interaction.response.send_message("❌ Nhạc chưa bị tạm dừng hoặc không có bài nào để tiếp tục.")
+
+@tree.command(name="queue", description="Xem danh sách bài hát trong hàng chờ")
+async def show_queue(interaction: discord.Interaction):
+    guild_id = interaction.guild.id
+
+    if guild_id in queue and queue[guild_id]:
+        queue_list = "\n".join([f"{i+1}. {title}" for i, (_, title) in enumerate(queue[guild_id])])
+        await interaction.response.send_message(f"🎶 **Danh sách bài hát trong hàng chờ:**\n{queue_list}")
+    else:
+        await interaction.response.send_message("❌ Hàng đợi trống.")
+
+
+
+##########
+class RPSGame(View):
+    def __init__(self, user: discord.User):
+        super().__init__(timeout=10)  # Set thời gian chờ 10 giây
+        self.user = user
+        self.choices = ["✊", "✋", "✌️"]
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user != self.user:
+            await interaction.response.send_message("❌ Bạn không phải người chơi của game này!", ephemeral=True)
+            return False
+        return True
+
+    @discord.ui.button(label="✌️ Kéo", style=discord.ButtonStyle.primary)
+    async def rock(self, interaction: discord.Interaction, button: Button):
+        await self.process_game(interaction, "✌️")
+
+    @discord.ui.button(label="✋ Bao", style=discord.ButtonStyle.success)
+    async def paper(self, interaction: discord.Interaction, button: Button):
+        await self.process_game(interaction, "✋")
+
+    @discord.ui.button(label="✊ Búa", style=discord.ButtonStyle.danger)
+    async def scissors(self, interaction: discord.Interaction, button: Button):
+        await self.process_game(interaction, "✊")
+
+    async def process_game(self, interaction: discord.Interaction, player_choice: str):
+        bot_choice = random.choice(self.choices)
+        result = self.determine_winner(player_choice, bot_choice)
+
+        await interaction.response.edit_message(
+            content=f"🆚 Bạn chọn: {player_choice} | Bot chọn: {bot_choice}\n{result}",
+            view=None
+        )
+
+    def determine_winner(self, player: str, bot: str) -> str:
+        if player == bot:
+            return "⚖️ **Hòa rồi!**"
+        elif (player == "✊" and bot == "✌️") or (player == "✋" and bot == "✊") or (player == "✌️" and bot == "✋"):
+            return "🎉 **Bạn thắng!**"
+        else:
+            return "🤖 **Bot thắng!**"
+
+@tree.command(name="kéo-búa-bao", description="Chơi game Kéo Búa Bao với bot")
+async def rps(interaction: discord.Interaction):
+    await interaction.response.send_message("🎮 Chọn kéo, búa hoặc bao!", view=RPSGame(interaction.user))
 
 
 
 
+#Bộ bài Xì Lác
+CARD_VALUES = {
+    "A": [1, 11], "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9, "10": 10,
+    "J": 10, "Q": 10, "K": 10
+}
+CARD_SUITS = ["♠️", "♥️", "♦️", "♣️"]
+
+def draw_card():
+    """ Rút một lá bài ngẫu nhiên """
+    rank = random.choice(list(CARD_VALUES.keys()))
+    suit = random.choice(CARD_SUITS)
+    return f"{rank}{suit}", CARD_VALUES[rank]
+
+def calculate_hand(hand):
+    total = 0
+    aces = 0
+    for card, value in hand:
+        if card.startswith("A"):
+            aces += 1
+            total += 11  # Mặc định Át là 11
+        else:
+            total += value
+
+    # Nếu tổng điểm vượt quá 21, đổi Át từ 11 thành 1
+    while total > 21 and aces:
+        total -= 10
+        aces -= 1
+
+    return total
+
+class XiDachGame(View):
+    def __init__(self, user: discord.User):
+        super().__init__(timeout=30)  # Giới hạn thời gian 30s
+        self.user = user
+        self.player_hand = [draw_card(), draw_card()]
+        self.bot_hand = [draw_card(), draw_card()]
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user != self.user:
+            await interaction.response.send_message("❌ Bạn không phải người chơi của game này!", ephemeral=True)
+            return False
+        return True
+
+    def get_hand_display(self, hand):
+        """ Hiển thị bài với emoji lá bài """
+        return " | ".join([card for card, _ in hand])
+
+    @discord.ui.button(label="🎯 Rút bài", style=discord.ButtonStyle.primary)
+    async def hit(self, interaction: discord.Interaction, button: Button):
+        self.player_hand.append(draw_card())
+        player_total = calculate_hand(self.player_hand)
+
+        if player_total > 21:
+            await interaction.response.edit_message(
+                content=f"💥 **Bạn đã rút bài và bị quắc (quá 21 điểm)!**\n\n"
+                        f"🃏 **Bài của bạn:** {self.get_hand_display(self.player_hand)} (**{player_total} điểm**)\n"
+                        f"🤖 **Bài của nhà cái:** {self.bot_hand[0][0]} | ❓\n"
+                        f"❌ **Bạn thua rồi!**",
+                view=None
+            )
+        else:
+            await interaction.response.edit_message(
+                content=f"🎯 **Bạn đã rút bài!**\n\n"
+                        f"🃏 **Bài của bạn:** {self.get_hand_display(self.player_hand)} (**{player_total} điểm**)\n"
+                        f"🤖 **Bài của nhà cái:** {self.bot_hand[0][0]} | ❓\n"
+                        f"📌 **Bấm 'Dừng' nếu bạn muốn giữ bài!**",
+                view=self
+            )
+
+    @discord.ui.button(label="🛑 Dừng", style=discord.ButtonStyle.success)
+    async def stand(self, interaction: discord.Interaction, button: Button):
+        player_total = calculate_hand(self.player_hand)
+        bot_total = calculate_hand(self.bot_hand)
+
+        # Bot bốc bài nếu có dưới 16 điểm 
+        while bot_total < 16:
+            self.bot_hand.append(draw_card())
+            bot_total = calculate_hand(self.bot_hand)
+
+        # Xác định kết quả
+        if bot_total > 21 or player_total > bot_total:
+            result = "🎉 **Bạn thắng!**"
+        elif player_total == bot_total:
+            result = "⚖️ **Hòa nhau!**"
+        else:
+            result = "🤖 **Nhà cái thắng!**"
+
+        await interaction.response.edit_message(
+            content=f"🃏 **Bài của bạn:** {self.get_hand_display(self.player_hand)} (**{player_total} điểm**)\n"
+                    f"🤖 **Bài của nhà cái:** {self.get_hand_display(self.bot_hand)} (**{bot_total} điểm**)\n"
+                    f"{result}",
+            view=None
+        )
+
+@tree.command(name="xì-dách", description="Chơi bài Xì Dách với bot!")
+async def xidach(interaction: discord.Interaction):
+    game = XiDachGame(interaction.user)
+    await interaction.response.send_message(
+        f"🃏 **Bắt đầu game Xì Dách!**\n\n"
+        f"**Bài của bạn:** {game.get_hand_display(game.player_hand)}\n\n"
+        f"**Bài của nhà cái:** {game.bot_hand[0][0]} | ❓\n\n"
+        f"🎯 **Bấm 'Rút bài' để bốc thêm hoặc 'Dừng' để giữ bài!**",
+        view=game
+    )
 
 
 
+##################### Khối lệnh quản lý server
+@tree.command(name="clear", description="Xóa tin nhắn theo số lượng (tối đa 100).")
+@app_commands.checks.has_permissions(manage_messages=True)
+async def clear(interaction: discord.Interaction, so_luong: int):
+    if so_luong <= 0 or so_luong > 100:
+        await interaction.response.send_message("❌ Số lượng tin nhắn phải từ **1 đến 100**!", ephemeral=True)
+        return
+
+    await interaction.channel.purge(limit=so_luong)
+    await interaction.response.send_message(f"✅ Đã xóa **{so_luong}** tin nhắn!", ephemeral=True)
 
 
+@tree.command(name="kick", description="Kick thành viên ra khỏi server.")
+@app_commands.checks.has_permissions(kick_members=True)
+async def kick(interaction: discord.Interaction, member: discord.Member, ly_do: str = "Không có lý do"):
+    if interaction.user.top_role <= member.top_role:
+        await interaction.response.send_message("❌ Bạn không thể kick người có quyền cao hơn hoặc ngang bằng bạn!", ephemeral=True)
+        return
+    if not interaction.guild.me.guild_permissions.kick_members:
+        await interaction.response.send_message("❌ Bot không có quyền `Kick Members`!", ephemeral=True)
+        return
+
+    await member.kick(reason=ly_do)
+    await interaction.response.send_message(f"✅ **{member.mention} đã bị kick!** 🛑\n**Lý do:** {ly_do}")
 
 
+@tree.command(name="ban", description="Cấm thành viên khỏi server.")
+@app_commands.checks.has_permissions(ban_members=True)
+async def ban(interaction: discord.Interaction, member: discord.Member, ly_do: str = "Không có lý do"):
+    if interaction.user.top_role <= member.top_role:
+        await interaction.response.send_message("❌ Bạn không thể ban người có quyền cao hơn hoặc ngang bằng bạn!", ephemeral=True)
+        return
+    if not interaction.guild.me.guild_permissions.ban_members:
+        await interaction.response.send_message("❌ Bot không có quyền `Ban Members`!", ephemeral=True)
+        return
+
+    await member.ban(reason=ly_do)
+    await interaction.response.send_message(f"🚫 **{member.mention} đã bị ban!** 🔨\n**Lý do:** {ly_do}")
 
 
-
-
-
-
-#@tree.command(name="kick", description = "Kick một member nào đó",)
-##@commands.has_permissions(kick_members = True, administrator = True)
-#async def kick(interaction: discord.Interaction, user : discord.Member, li_do: str):#
-   # if user.id == interaction.user.id:
-   #     print("1 chạy")
-   #     await interaction.response.send_message("Bạn không thể tự kick chính mình!!")
-   # elif user.guild_permissions.administrator:
-   #     print("2 chạy")
-   #     await interaction.response.send_message("Ơ kìa anh bạn, bạn không thể kick được Admin đâu :))", ephemeral = False)
-   # elif isinstance(interaction, MissingPermissions):
-   #     print("3 chạy")
-   #     await interaction.response.send_message("Bạn cần có quyền **Kick Member** và **Admin**!!", ephemeral = False)
-   # elif commands.has_permissions(kick_members = True, administrator = True): 
-   #     print("4 chạy")
-   #     await interaction.response.send_message(f"**{user}** đã bị kick khỏi server! \nLí do: **{li_do}**", ephemeral = False)
-   #     await user.kick(reason=li_do)
-   # else:
-   #     print("5 chạy")
-   #     await interaction.response.send_message("Bot không được cấp quyền Kick Member - Admin, vui lòng điều chỉnh quyền hạn của bot trong cài đặt server", ephemeral = False)
-       
-
-#@tree.command(name="test", description = "...",)
-#async def self(interaction: discord.Interaction):
-#    if commands.has_permissions(mod = True) == True:#
-  #      await interaction.response.send_message("có")
-    # else:
-     #   await interaction.response.send_message("không")
-
-#@kick.error
-#async def kick_error(interaction ,error):
-#   if isinstance(error, MissingPermissions):
-#       await interaction.response.send_message("Bạn cần có quyền **Kick Member** và **Admin**!!")
-#   else:
-#       await interaction.response.send_message("Đã có lỗi!")
-#      raise error
-
-
-#run
 client.run(TOKEN) 
