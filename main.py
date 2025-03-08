@@ -21,7 +21,6 @@ from discord.ext import commands
 from discord.ext.commands import MissingPermissions
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
-# from dotenv.main import with_warn_for_invalid_lines
 import requests
 from discord.utils import get
 from discord.ext import commands
