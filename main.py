@@ -819,7 +819,7 @@ async def get_user_message(interaction: discord.Interaction):
 async def lyrics(interaction: discord.Interaction, name_song: str):
     print("lyrics")
     try:
-        extract_lyrics = SongLyrics('AIzaSyDAE7rvXWGrK_09ULTxDD75iiPq6OPxLIU', 'c21752e43224047fd')
+        extract_lyrics = SongLyrics(API_KEY, 'c21752e43224047fd')
         data = extract_lyrics.get_lyrics(name_song)                 
         lyricsembed = discord.Embed(title = data['title'], description = data['lyrics'], color = discord.Color.gold()) 
         lyricsembed.set_footer (text = f'• 🎵 Lệnh được sử dụng bởi: {interaction.user}')
