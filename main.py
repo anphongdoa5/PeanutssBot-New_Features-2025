@@ -1,4 +1,4 @@
-#there is no update at all XD, just maintained streak
+#there is no update at all XD, just maintained streak (2)
 # bot.py
 import pyshorteners
 import qrcode
