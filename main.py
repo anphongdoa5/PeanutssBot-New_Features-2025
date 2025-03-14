@@ -44,7 +44,8 @@ from deep_translator import GoogleTranslator
 import yt_dlp
 from discord.ui import View, Button
 from gtts import gTTS
-
+from google.genai import types
+from PIL import Image
 
 #
 load_dotenv()
@@ -78,10 +79,10 @@ tree = app_commands.CommandTree(client)
 @tree.command(name="help", description = "Xem tất cả các lệnh của bot")
 async def self(interaction: discord.Interaction):
     print("help")
-    myembed = discord.Embed (title = 'Peanutss Bot (v5.0.0)', description = 'Sử dụng `/[lệnh]` để tương tác với bot', color = discord.Color.gold())
+    myembed = discord.Embed (title = 'Peanutss Bot (v5.0.1)', description = 'Sử dụng `/[lệnh]` để tương tác với bot', color = discord.Color.gold())
     myembed.set_author (name = "Danh Sách Lệnh")
     myembed.add_field (name = "💬 Tương Tác - (5)", value = "</số-may-mắn:1014044426898784275>, </máy-tính-bỏ-túi:1348139497535176716>, </máy-tính-tuổi-thông-minh:1014044426898784272>, </văn-mẫu:1014047478808576021>, </hành-động:1014047478808576020>", inline=False)
-    myembed.add_field (name = "🤖 Trí Tuệ Nhân Tạo (AI) - (2)", value = "</ai-chat:1348139497409220676>, `/imagine: Coming Soon`", inline=False)
+    myembed.add_field (name = "🤖 Trí Tuệ Nhân Tạo (AI) - (2)", value = "</ai-chat:1348139497409220676>, </imagine:1349923462918963380>", inline=False)
     myembed.add_field (name = "🎵 Âm Nhạc - (7)", value = "</play:1348145735375261697>, </skip:1348145735375261698>, </pause:1348145735375261699>, </resume:1348145735375261700>, </queue:1348145735375261701>, </join:1348145735375261702>, </leave:1348145735375261703>", inline=False)
     myembed.add_field (name = "🎮 Mini Game - (2)", value = "</xì-dách:1348145735375261705>, </kéo-búa-bao:1348145735375261704>", inline=False)
     myembed.add_field (name = "🎁 Media - (7)", value = "</meme:1014044426898784273>, </darkmeme:1014044426898784274>, </girl:1014044427255287884>, </cat:1014044427255287878>, </dog:1014044427255287879>, </food:1014044427255287880>, </waifu:1014044427255287882>", inline=False)
@@ -100,10 +101,11 @@ async def self(interaction: discord.Interaction):
 @tree.command(name="tính-năng-mới", description = "Xem những tính năng mới được cập nhật!")
 async def newfeature(interaction: discord.Integration):
     print("tính năng mới")
-    newfeaembed = discord.Embed(title="Các tính năng vừa mới được cập nhật (v5.0.0):", color=discord.Color.gold())
-    newfeaembed.set_author(name="Peanutss Bot - Latest Updated 09/03/2025")
+    newfeaembed = discord.Embed(title="Các tính năng vừa mới được cập nhật (v5.0.1):", color=discord.Color.gold())
+    newfeaembed.set_author(name="Peanutss Bot - Latest Updated 14/03/2025")
     newfeaembed.set_thumbnail(url='https://cdn.discordapp.com/attachments/802496233893396490/1347857805930922018/Andy-Grey-Logo.gif?ex=67ce02a6&is=67ccb126&hm=c8022d970fcf536a7e7453dd4d9f318310b486054d0f2f767b433934bb3224b5&')
     newfeaembed.add_field(name="• </ai-chat:1348139497409220676>", value="Nâng cấp lên mô hình Gemini Flash 3.0", inline=False)
+    newfeaembed.add_field(name="• </imagine:1349923462918963380>", value="Tạo ảnh bằng AI từ ý tưởng của bạn", inline=False)
     newfeaembed.add_field(name="• </speak:1348145735375261696>", value="Nhờ bot nói hộ khi bạn không có mic", inline=False)
     newfeaembed.add_field(name="• </play:1348145735375261697>", value="Yêu cầu bot mở nhạc bằng từ khóa hoặc link", inline=False)
     newfeaembed.add_field(name="• </skip:1348145735375261698>", value="Chuyển tới bài hát tiếp theo", inline=False)
@@ -1433,6 +1435,45 @@ async def ban(interaction: discord.Interaction, member: discord.Member, ly_do: s
     await interaction.response.send_message(f"🚫 **{member.mention} đã bị ban!** 🔨\n**Lý do:** {ly_do}")
 
 
+############ imagine
+gen = genai.Client(api_key=GEMINI_TOKEN)
+@tree.command(name="imagine", description="Tạo ảnh bằng AI từ mô tả của bạn!")
+async def generate(interaction: discord.Interaction, prompt: str):
+    await interaction.response.defer()  # Tránh timeout khi chờ ảnh
+    try:
+        response = gen.models.generate_content(
+            model="models/gemini-2.0-flash-exp",
+            contents=prompt,
+            config=types.GenerateContentConfig(response_modalities=['Text', 'Image'])
+        )
+
+        image_data = None
+        text_response = ""
+
+        for part in response.candidates[0].content.parts:
+            if part.text is not None:
+                text_response += part.text + "\n"
+            elif part.inline_data is not None:
+                image_data = part.inline_data.data  # Dữ liệu ảnh
+
+        # Nếu có hình ảnh, gửi lên Discord
+        if image_data:
+            image = Image.open(BytesIO(image_data))
+            image_buffer = BytesIO()
+            image.save(image_buffer, format="PNG")
+            image_buffer.seek(0)
+            file = discord.File(fp=image_buffer, filename="generated_image.png")
+
+            embed = discord.Embed(title="✨ Ảnh được tạo bởi AI", description=text_response, color=discord.Color.blue())
+            embed.set_image(url="attachment://generated_image.png")
+            embed.set_footer(text=f"• Yêu cầu bởi: {interaction.user}")
+
+            await interaction.followup.send(embed=embed, file=file)
+        else:
+            await interaction.followup.send("❌ Không có ảnh nào được tạo!")
+
+    except Exception as e:
+        await interaction.followup.send(f"❌ Lỗi khi tạo ảnh: {str(e)}")
 
 #run
 client.run(BOT_TOKEN) 
